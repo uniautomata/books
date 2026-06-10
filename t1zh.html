@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>&#8203;</title>
+<meta property="og:title" content="BY UNIAUTOMATA">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://uniautomata.github.io/books/t1zh.html">
+<meta property="og:description" content="&#160;">
+<meta property="og:image" content="https://uniautomata.github.io/books/Uniautomata.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #000;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #lock-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 100;
+  }
+
+  #passcode-label {
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  #lock-screen input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #444;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    letter-spacing: 0.3em;
+    text-align: center;
+    width: 80px;
+    padding: 4px 0;
+    outline: none;
+    caret-color: #fff;
+  }
+
+  #pin-error {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: #ff4444;
+    height: 16px;
+  }
+
+  #reader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #000;
+  }
+
+  #comic-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    transition: opacity 0.15s;
+  }
+
+  #loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  #loading span {
+    font-size: 16px;
+    letter-spacing: 0.25em;
+    color: #fff;
+  }
+
+  #tap-left {
+    position: fixed;
+    left: 0; top: 0;
+    width: 40%; height: 100%;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  #tap-right {
+    position: fixed;
+    right: 0; top: 0;
+    width: 40%; height: 100%;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  #page-counter {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: #333;
+    font-family: 'Courier New', monospace;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #hint {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 30;
+    cursor: pointer;
+  }
+
+  .hint-arrow {
+    font-size: 21px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.6);
+    font-family: 'Courier New', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div id="lock-screen">
+  <p id="passcode-label">Passcode</p>
+  <input id="pin-input" type="password" inputmode="numeric" maxlength="4" autocomplete="off" autofocus>
+  <div id="pin-error"></div>
+</div>
+
+<div id="reader">
+  <img id="comic-img" src="" alt="" draggable="false">
+  <div id="loading"><span>loading</span></div>
+  <div id="tap-left" onclick="prevPage()"></div>
+  <div id="tap-right" onclick="nextPage()"></div>
+  <div id="page-counter"></div>
+  <div id="hint" onclick="dismissHint()">
+    <span class="hint-arrow">← PREV</span>
+    <span class="hint-arrow">NEXT →</span>
+  </div>
+</div>
+
+<script>
+  const PASSWORD = '1111';
+  const TOTAL = 23;
+  const BASE = 'https://pub-7b869c2ffa85437898bea1a178cdc5f4.r2.dev/T1ZH_';
+  const EXT = '.jpg';
+
+  let page = 1;
+
+  const input = document.getElementById('pin-input');
+  const errEl = document.getElementById('pin-error');
+  const loadingEl = document.getElementById('loading');
+  const hintEl = document.getElementById('hint');
+
+  input.addEventListener('input', () => {
+    if (input.value.length === 4) setTimeout(check, 100);
+  });
+
+  function check() {
+    if (input.value === PASSWORD) {
+      document.getElementById('lock-screen').style.display = 'none';
+      document.getElementById('reader').style.display = 'block';
+      loadPage(1);
+    } else {
+      errEl.textContent = 'incorrect';
+      input.value = '';
+      setTimeout(() => { errEl.textContent = ''; input.focus(); }, 1000);
+    }
+  }
+
+  function dismissHint() {
+    hintEl.style.display = 'none';
+  }
+
+  function pad(n) { return String(n).padStart(3, '0'); }
+
+  function loadPage(n) {
+    const img = document.getElementById('comic-img');
+    img.style.opacity = '0';
+    loadingEl.style.display = 'flex';
+    img.src = BASE + pad(n) + EXT;
+    img.onload = () => {
+      loadingEl.style.display = 'none';
+      img.style.opacity = '1';
+    };
+    document.getElementById('page-counter').textContent = n + ' / ' + TOTAL;
+    page = n;
+  }
+
+  function nextPage() {
+    dismissHint();
+    if (page < TOTAL) loadPage(page + 1);
+  }
+
+  function prevPage() {
+    dismissHint();
+    if (page > 1) loadPage(page - 1);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('reader').style.display !== 'block') return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevPage();
+  });
+
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (document.getElementById('reader').style.display !== 'block') return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { if (dx < 0) nextPage(); else prevPage(); }
+  });
+</script>
+</body>
+</html>
